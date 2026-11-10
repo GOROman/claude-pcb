@@ -129,7 +129,8 @@ def build():
         sym = get_symbol(p["lib"])
         extra = [("MPN", p["extra"]["mpn"])] if p["extra"].get("mpn") else []
         is_flag = p["ref"].startswith("#")
-        instance(p["lib"], p["ref"], p["value"], p["fp"], x, y, extra, in_bom=not is_flag, on_board=not is_flag)
+        instance(p["lib"], p["ref"], p["value"], p["fp"], x, y, extra,
+                 in_bom=not is_flag and not p["ref"].startswith("H"), on_board=not is_flag)
         done = {}
         for num, px, py, ang in sym_pins(sym):
             if num not in p["pins"]:

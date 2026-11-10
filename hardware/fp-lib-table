@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "claude_pico")(type "KiCad")(uri "${KIPRJMOD}/lib/claude_pico.pretty")(options "")(descr "Pico 互換基板用の独自フットプリント"))
+)
