@@ -289,10 +289,46 @@ class Gen:
         self.b.Add(t)
 
     def fill(self):
+        # 島の除去は接続情報に依存するので、先に構築してから塗る
+        self.b.BuildConnectivity()
         pcbnew.ZONE_FILLER(self.b).Fill(self.b.Zones())
 
     def save(self):
         pcbnew.SaveBoard(self.path, self.b)
+
+
+def silk(g):
+    """シルク: 裏面に Pico と同じピン名、表面に最小限のラベル。"""
+    L, R, C = pcbnew.GR_TEXT_H_ALIGN_LEFT, pcbnew.GR_TEXT_H_ALIGN_RIGHT, pcbnew.GR_TEXT_H_ALIGN_CENTER
+    BS, FS = pcbnew.B_SilkS, pcbnew.F_SilkS
+    names = []
+    for i, n in enumerate(design.PICO_PINS):
+        n = n.replace("GPIO", "GP").replace("+3V3", "3V3").replace("ADC_VREF", "VREF")
+        names.append("AGND" if i + 1 == 33 else n)
+    for i in range(20):
+        y = 1.37 + 2.54 * i
+        # 裏面は鏡像になるので、基板の左辺（裏から見ると右側）のラベルは右寄せ指定にする
+        if i == 19:  # 最下段は取付穴を避けて小さく上へずらす
+            g.text(names[i], 6.5, 49.3, 0.6, BS, rot=90, just=C)
+            g.text(names[39 - i], W - 6.5, 49.3, 0.6, BS, rot=90, just=C)
+            continue
+        g.text(names[i], 2.75, y, 0.75, BS, just=R)
+        g.text(names[39 - i], W - 2.75, y, 0.75, BS, just=L)
+    g.text("SWCLK", 7.96, 47.2, 0.6, BS, rot=90, just=R)
+    g.text("GND", 10.5, 47.2, 0.6, BS, rot=90, just=R)
+    g.text("SWDIO", 13.04, 47.2, 0.6, BS, rot=90, just=R)
+    g.text("claude-pico2", 10.5, 38.2, 0.8, BS, just=C)
+    g.text("RP2350A rev %s" % design.REV, 10.5, 39.5, 0.6, BS, just=C)
+    g.text("by Claude", 10.5, 40.7, 0.6, BS, just=C)
+    # 表面
+    g.text("claude-pico2", 9.0, 42.6, 0.9, FS, just=C)
+    g.text("RP2350A rev %s" % design.REV, 9.0, 44.0, 0.65, FS, just=C)
+    g.text("BOOT", 8.9, 15.45, 0.6, FS, just=C)
+    g.text("LED", 17.1, 26.75, 0.6, FS, just=C)
+    g.text("1", 3.3, 0.75, 0.7, FS, just=C)
+    g.text("SWCLK", 7.96, 47.5, 0.6, FS, rot=90, just=L)
+    g.text("SWDIO", 13.04, 47.5, 0.6, FS, rot=90, just=L)
+    g.text("GND", 10.5, 47.5, 0.6, FS, rot=90, just=L)
 
 
 def main(path):
@@ -306,6 +342,7 @@ def main(path):
     g.zone("GND", IN1, full)
     g.zone("+3V3", IN2, full)
     routes.build(g)
+    silk(g)
     g.fill()
     g.save()
     print("saved", path, "tracks:", len(g.b.GetTracks()), "footprints:", len(g.b.GetFootprints()))
